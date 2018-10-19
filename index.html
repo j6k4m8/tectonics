@@ -5,12 +5,65 @@
 
     <body>
         <script>
+            let earth;
             function setup() {
                 createCanvas(600, 600);
+                class Planet {
+                    constructor(opts={}) {
+                        this.radius = opts.radius || 0.8;
+                        this.atmoRadius = opts.atmoRadius || 1.1;
+                        this.mantleRadius = opts.mantleRadius || 0.9;
+                        this.coreRadius = opts.coreRadius || 0.4;
+                    }
+
+                    _renderAtmo() {
+                        fill(0, 255, 255);
+                        ellipse(
+                            width/2, height/2,
+                            this.radius * width * this.atmoRadius,
+                            this.radius * width * this.atmoRadius,
+                        )
+                    }
+
+                    _renderCrust() {
+                        fill(0);
+                        ellipse(
+                            width/2, height/2,
+                            this.radius * width,
+                            this.radius * width,
+                        )
+                    }
+
+                    _renderMantle() {
+                        fill(255, 150, 0);
+                        ellipse(
+                            width/2, height/2,
+                            this.radius * width * this.mantleRadius,
+                            this.radius * width * this.mantleRadius,
+                        )
+                    }
+                    _renderCore() {
+                        fill(255, 200, 0);
+                        ellipse(
+                            width/2, height/2,
+                            this.radius * width * this.coreRadius,
+                            this.radius * width * this.coreRadius,
+                        )
+                    }
+
+                    render() {
+                        this._renderAtmo();
+                        this._renderCrust();
+                        this._renderMantle();
+                        this._renderCore();
+                    }
+                }
+                earth = new Planet();
             }
 
             function draw() {
                 background(0);
+                earth.render();
             }
         </script>
     </body>
