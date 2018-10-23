@@ -1,3 +1,11 @@
+# tectonics
+
+[https://xkcd.com/2061/](https://xkcd.com/2061/)
+
+## Progress Screenshots
+
+![](gb.gif)
+
 ![](2018-10-19-20-37-43.png)
 
 ![](2018-10-19-20-44-53.png)
