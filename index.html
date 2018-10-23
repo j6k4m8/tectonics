@@ -1,62 +1,119 @@
 <html>
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
     </head>
 
     <body>
         <script>
             let earth;
+            let baseTemp = 100;
+            let gauss3x3 = nj.array([
+                [1, 2, 1],
+                [2, 4, 2],
+                [1, 2, 1],
+            ]).multiply(1/16);
+
             function setup() {
                 createCanvas(600, 600);
                 class Planet {
                     constructor(opts={}) {
-                        this.radius = opts.radius || 0.8;
-                        this.atmoRadius = opts.atmoRadius || 1.1;
-                        this.mantleRadius = opts.mantleRadius || 0.9;
-                        this.coreRadius = opts.coreRadius || 0.4;
-                    }
-
-                    _renderAtmo() {
-                        fill(0, 255, 255);
-                        ellipse(
-                            width/2, height/2,
-                            this.radius * width * this.atmoRadius,
-                            this.radius * width * this.atmoRadius,
-                        )
-                    }
-
-                    _renderCrust() {
-                        fill(0);
-                        ellipse(
-                            width/2, height/2,
-                            this.radius * width,
-                            this.radius * width,
-                        )
+                        this.groundLevel = height * 0.3;
+                        this.xres = 100;
+                        this.yres = 100;
+                        this.mantleTempGrid = nj.ones([this.xres, this.yres]).multiply(baseTemp);
+                        this.crustSegments = np.array([
+                            // x, y, vx, vy
+                            []
+                        ])
                     }
 
                     _renderMantle() {
-                        fill(255, 150, 0);
-                        ellipse(
-                            width/2, height/2,
-                            this.radius * width * this.mantleRadius,
-                            this.radius * width * this.mantleRadius,
-                        )
+                        noStroke();
+                        for (let i = 0; i < this.xres; i ++) {
+                            for (let j = 0; j < this.yres; j ++) {
+                                fill(this.mantleTempGrid.get(i, j), 0, 0);
+                                rect(
+                                    width/this.xres * i,
+                                    (this.groundLevel) + (height - this.groundLevel)/this.yres * j,
+                                    10, 10,
+                                );
+                            }
+                        }
                     }
-                    _renderCore() {
-                        fill(255, 200, 0);
-                        ellipse(
-                            width/2, height/2,
-                            this.radius * width * this.coreRadius,
-                            this.radius * width * this.coreRadius,
-                        )
+
+                    _renderCrust() {
+                        strokeWeight(20);
+                        let lastI = 0;
+                        for (let i = 1; i < this.xres; i++) {
+                            let mantleTemp = this.mantleTempGrid.get(i, 0);
+                            stroke(mantleTemp, 50, 10);
+                            line(
+                                lastI * (width/this.xres), this.groundLevel - mantleTemp/30,
+                                i * (width/this.xres), this.groundLevel
+                            );
+                            lastI = i;
+                        }
+                    }
+
+                    heat(x, y, arity=1) {
+                        //
+                        if (y > (height - height * this.groundLevel)) {
+                            let coordX = round(this.xres * x / width);
+                            let coordY = round(this.yres *
+                                (y - this.groundLevel)/(height-this.groundLevel)
+                            );
+                            let val = this.mantleTempGrid.get(coordX, coordY) + (arity) * 1000;
+                            this.mantleTempGrid.set(
+                                coordX, coordY, val
+                            )
+                        }
+                    }
+
+                    step() {
+                        // Step each cell:
+                        for (let i = 0; i < this.xres; i++) {
+                            for (let j = 0; j < this.yres; j++) {
+                                let val = this.mantleTempGrid.get(i, j);
+                                if (val > baseTemp + 10) {
+                                    let above = max([j-1, 0]);
+                                    this.mantleTempGrid.set(
+                                        i, above,
+                                        lerp(this.mantleTempGrid.get(i, above), val, 0.8)
+                                    )
+                                } else if (val < baseTemp - 10) {
+                                    let below = min([j+1, this.yres-1]);
+                                    this.mantleTempGrid.set(
+                                        i, below,
+                                        lerp(this.mantleTempGrid.get(i, below), val, 0.2)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    blur() {
+                        this.mantleTempGrid.slice([1, -1], [1, -1]).assign(
+                            nj.convolve(
+                                this.mantleTempGrid,
+                                gauss3x3,
+                            ), false
+                        );
+                    }
+
+                    frame() {
+                        // Heat bottom layer of mantle:
+                        this.step();
+                        this.blur();
                     }
 
                     render() {
-                        this._renderAtmo();
-                        this._renderCrust();
+                        this.frame();
                         this._renderMantle();
-                        this._renderCore();
+                        this._renderCrust();
                     }
+
+
                 }
                 earth = new Planet();
             }
@@ -64,6 +121,14 @@
             function draw() {
                 background(0);
                 earth.render();
+            }
+
+            function mouseDragged() {
+                if (keyIsPressed) {
+                    earth.heat(mouseX, mouseY, -1);
+                } else {
+                    earth.heat(mouseX, mouseY);
+                }
             }
         </script>
     </body>
