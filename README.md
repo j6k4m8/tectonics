@@ -1,6 +1,6 @@
 # tectonics
 
-[https://xkcd.com/2061/](https://xkcd.com/2061/)
+A work in progress, based upon [xkcd:2061](https://xkcd.com/2061/).
 
 ## Progress Screenshots
 
